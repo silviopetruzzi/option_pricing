@@ -13,15 +13,15 @@
     
 ## BS Forumla:
 
-C = S * N(d1) - K * e^(-r * t) * N(d2)
+C = S * N(d1) - K * e^(-r * t) * N(d2) \\
 
-d1 = ( ln(S0 / K) + (r + sigma^2 / 2) * T ) / sigma * sqrt(T)
-d2 = ( ln(S0 / K) + (r - sigma^2 / 2) * T ) / sigma * sqrt(T)
+d1 = ( ln(S0 / K) + (r + sigma^2 / 2) * T ) / sigma * sqrt(T) \
+d2 = ( ln(S0 / K) + (r - sigma^2 / 2) * T ) / sigma * sqrt(T) \
 
 
-C = Call option price
-S = current stock price
-K = strike price
-r = risk-free interest rate
-t = time to maturity
-N = Normal distribution (cumulative)
+C = Call option price \
+S = current stock price \
+K = strike price \
+r = risk-free interest rate \
+t = time to maturity \
+N = Normal distribution (cumulative) \
