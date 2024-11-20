@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from graphs import create_option_payoff_charts
-from bs import BlackScholes  
+from BlackScholes import BlackScholes  
 
 def create_app():
     st.set_page_config(
