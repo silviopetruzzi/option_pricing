@@ -1,9 +1,10 @@
 import streamlit as st
 import pandas as pd
-from BlackScholes import BlackScholes  
+import numpy as np
+from graphs import create_option_payoff_charts
+from bs import BlackScholes  
 
 def create_app():
-    # Set page config
     st.set_page_config(
         page_title="Black-Scholes Option Calculator 📊",
         layout="wide",
@@ -11,107 +12,159 @@ def create_app():
     )
 
     # Title and description
-    st.title("Black-Scholes Option Calculator")
-    st.write('Created by: ')
-    linkedin_url ="https:/www.linkedin.com/in/silviopetruzzi"
-    st.markdown(f'<a href="{linkedin_url}" target="_blank" style="text-decoration: none; color: inherit;"><img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="25" height="25" style="vertical-align: middle; margin-right: 10px;">`Silvio Petruzzi`</a>', unsafe_allow_html=True)
+    st.title("Black-Scholes Option Pricing Calculator")
     st.markdown("Calculate option prices and Greeks using the Black-Scholes model")
 
-    # Create two columns for input parameters
+    # Sidebar for input parameters
+    st.sidebar.title("Black-Scholes Model 📊")
+    st.sidebar.write('*Created by*')
+    linkedin_url = "https:/www.linkedin.com/in/silviopetruzzi"
+    st.sidebar.markdown(
+        f'<a href="{linkedin_url}" target="_blank" style="text-decoration: none; color: inherit;">'
+        f'<img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="25" height="25" '
+        f'style="vertical-align: middle; margin-right: 10px;">Silvio Petruzzi</a>',
+        unsafe_allow_html=True,
+    )
+    st.sidebar.subheader("Tweak input parameters")
+    st.sidebar.markdown("Adjust the parameters below:")
+
+    # Input parameters in the sidebar
+    S = st.sidebar.number_input(
+        "Spot Price",
+        min_value=0.01,
+        value=100.00,
+        step=0.50,
+        format="%.2f"
+    )
+
+    K = st.sidebar.number_input(
+        "Strike Price",
+        min_value=0.01,
+        value=100.00,
+        step=0.50,
+        format="%.2f"
+    )
+
+    t = st.sidebar.number_input(
+        "Time to Maturity (Years)",
+        min_value=0.01,
+        value=1.00,
+        step=0.01,
+        format="%.2f"
+    )
+
+    sigma = st.sidebar.number_input(
+        "Volatility (σ)",
+        min_value=0.01,
+        value=0.20,
+        step=0.01,
+        format="%.2f"
+    )
+
+    r = st.sidebar.number_input(
+        "Risk-Free Rate",
+        min_value=0.00,
+        value=0.030,
+        step=0.001,
+        format="%.3f"
+    )
+
+    params = {
+        "Current Price": [S],
+        "Strike Price": [K],
+        "Time-to-maturity": [t],
+        "vol": [sigma],
+        "risk-free-rate": [r]
+    }
+ 
+    # calculate prices
+    # Create instance of BlackScholes class
+    bs_call = BlackScholes(S, K, t, r, sigma)
+    bs_put = BlackScholes(S, K, t, r, sigma, option_type='put')
+        
+        # Calculate option prices
+    call_price = bs_call.calculate_price()
+    
+    put_price = bs_put.calculate_price()
+    # Calculate Greeks
+    delta_call = bs_call.get_delta()
+    delta_put = bs_put.get_delta()
+    gamma_call = bs_call.get_gamma()
+    gamma_put = bs_put.get_gamma()
+    theta_call = bs_call.get_theta()
+    theta_put = bs_put.get_theta()
+    vega_call = bs_call.get_vega()
+    vega_put = bs_put.get_vega()
+    rho_call = bs_call.get_rho()
+    rho_put = bs_put.get_rho()
+
+    # Display results in two columns
     col1, col2 = st.columns(2)
 
     with col1:
-        # Input parameters
-        S = st.number_input(
-            "Spot Price",
-            min_value=0.01,
-            value=100.00,
-            step=0.01,
-            format="%.2f"
-        )
-        
-        K = st.number_input(
-            "Strike Price",
-            min_value=0.01,
-            value=100.00,
-            step=0.01,
-            format="%.2f"
-        )
-        
-        t = st.number_input(
-            "Time to Maturity (Years)",
-            min_value=0.01,
-            value=1.00,
-            step=0.01,
-            format="%.2f"
-        )
+        st.subheader("Call Option")
+        st.write(f'**Price**: ${call_price:.2f}')
+
+        call_metrics = {
+            "Delta": [delta_call],
+            "Gamma": [gamma_call],
+            "Theta": [theta_call],
+            "Vega" : [vega_call],
+            "Rho": [rho_call],
+        }
+
+        st.dataframe(call_metrics)
 
     with col2:
-        sigma = st.number_input(
-            "Volatility (σ)",
-            min_value=0.01,
-            value=0.20,
-            step=0.01,
-            format="%.2f"
-        )
+        st.subheader("Put Option")
+        st.write(f'**Price**: ${put_price:.2f}')
+        put_metrics = {
+            "Delta": [delta_put],
+            "Gamma": [gamma_put],
+            "Theta": [theta_put],
+            "Vega" : [vega_put],
+            "Rho": [rho_put]
+        }
+
+        st.dataframe(put_metrics)
+
+    def calculate_payoff_data(spot_price, strike_price, option_price, option_type='call'):
+        """Calculate payoff data."""
+        # Generate price range from 50% to 150% of spot price
+        prices = np.linspace(spot_price * 0.5, spot_price * 1.5, 100)
         
-        r = st.number_input(
-            "Risk-Free Rate",
-            min_value=0.00,
-            value=0.030,
-            step=0.001,
-            format="%.3f"
-        ) 
- 
-    # Calculate button
-    if st.button("Calculate", type="primary"):
-        # Create instance of BlackScholes class
-        bs_call = BlackScholes(S, K, t, r, sigma)
-        bs_put = BlackScholes(S, K, t, r, sigma, option_type='put')
+        if option_type == 'call':
+            payoffs = np.maximum(prices - strike_price, 0) - option_price
+        else:  # put
+            payoffs = np.maximum(strike_price - prices, 0) - option_price
         
-        # Calculate option prices
-        call_price = bs_call.calculate_price()
-        
-        put_price = bs_put.calculate_price()
+        return prices, payoffs
+    
+    st.subheader('**P&L Graphs**')
 
-        # Calculate Greeks
-        delta_call = bs_call.get_delta()
-        delta_put = bs_put.get_delta()
-        gamma_call = bs_call.get_gamma()
-        gamma_put = bs_put.get_gamma()
-        theta_call = bs_call.get_theta()
-        theta_put = bs_put.get_theta()
-        vega_call = bs_call.get_vega()
-        vega_put = bs_put.get_vega()
-        rho_call = bs_call.get_rho()
-        rho_put = bs_put.get_rho()
+    # Create and display the payoff diagrams
+    fig = create_option_payoff_charts(S, K, call_price, put_price)
+    st.plotly_chart(fig, use_container_width=True)
 
-        # Display results in two columns
-        col1, col2 = st.columns(2)
+    # Add styling to center-align
+    st.markdown(
+        """
+        <style>
+        .centered-table {
+            display: flex;
+            justify-content: center;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
-        with col1:
-            st.subheader("Call Option")
-            call_metrics = {
-                "**Price**": f"${call_price:.2f}",
-                "Delta": f"{delta_call:.4f}",
-                "Gamma": f"{gamma_call:.4f}",
-                "Theta": f"{theta_call:.4f}",
-                "Vega" : f"{vega_call:.4f}",
-                "Rho": f"{rho_call:.4f}"
-            }
-            st.markdown("\n\n".join(f"{k}: {v}" for k, v in call_metrics.items()))
+    # Wrap the table in a div with the centered-table class
+    st.markdown('<div class="centered-table">', unsafe_allow_html=True)
+    st.table(params)
+    st.markdown('</div>', unsafe_allow_html=True)
+    
 
-        with col2:
-            st.subheader("Put Option")
-            put_metrics = {
-                "**Price**": f"${put_price:.2f}",
-                "Delta": f"{delta_put:.4f}",
-                "Gamma": f"{gamma_put:.4f}",
-                "Theta": f"{theta_put:.4f}",
-                "Vega" : f"{vega_put:.4f}",
-                "Rho": f"{rho_put:.4f}"
-            }
-            st.markdown("\n\n".join(f"{k}: {v}" for k, v in put_metrics.items()))
 
 if __name__ == "__main__":
     create_app()
